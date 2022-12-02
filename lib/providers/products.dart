@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+
 import './product.dart';
 
-class Products with ChangeNotifier{
-  final List<Product> _items= [
+class Products with ChangeNotifier {
+  List<Product> _items = [
     Product(
       id: 'p1',
       title: 'Red Shirt',
@@ -36,18 +37,24 @@ class Products with ChangeNotifier{
       'https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Cast-Iron-Pan.jpg/1024px-Cast-Iron-Pan.jpg',
     ),
   ];
+  // var _showFavoritesOnly = false;
 
-  //This is a getter to get the elements
-  //We return a copy of items
   List<Product> get items {
+    // if (_showFavoritesOnly) {
+    //   return _items.where((prodItem) => prodItem.isFavorite).toList();
+    // }
     return [..._items];
   }
 
-  Product findById(String id){
+  List<Product> get favoriteItems {
+    return _items.where((prodItem) => prodItem.isFavorite).toList();
+  }
+
+  Product findById(String id) {
     return _items.firstWhere((prod) => prod.id == id);
   }
 
-  void addProduct(){
+  void addProduct() {
     // _items.add(value);
     notifyListeners();
   }
