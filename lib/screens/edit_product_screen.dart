@@ -4,14 +4,14 @@ import 'package:provider/provider.dart';
 import '../providers/product.dart';
 import '../providers/products.dart';
 
-class EditProductsScreen extends StatefulWidget {
+class EditProductScreen extends StatefulWidget {
   static const routeName = '/edit-product';
 
   @override
-  _EditProductsScreenState createState() => _EditProductsScreenState();
+  _EditProductScreenState createState() => _EditProductScreenState();
 }
 
-class _EditProductsScreenState extends State<EditProductsScreen> {
+class _EditProductScreenState extends State<EditProductScreen> {
   final _priceFocusNode = FocusNode();
   final _descriptionFocusNode = FocusNode();
   final _imageUrlController = TextEditingController();
@@ -31,6 +31,7 @@ class _EditProductsScreenState extends State<EditProductsScreen> {
     'imageUrl': '',
   };
   var _isInit = true;
+  var _isLoading = false;
 
   @override
   void initState() {
@@ -88,13 +89,40 @@ class _EditProductsScreenState extends State<EditProductsScreen> {
       return;
     }
     _form.currentState.save();
+    setState(() {
+      _isLoading = true;
+    });
     if (_editedProduct.id != null) {
       Provider.of<Products>(context, listen: false)
           .updateProduct(_editedProduct.id, _editedProduct);
+      setState(() {
+        _isLoading = false;
+      });
+      Navigator.of(context).pop();
     } else {
-      Provider.of<Products>(context, listen: false).addProduct(_editedProduct);
+      Provider.of<Products>(context, listen: false)
+          .addProduct(_editedProduct)
+          .catchError((error) {
+            return showDialog<Null>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: Text('An error occured'),
+                  content: Text('Something went wrong'),
+                  actions: <Widget>[
+                    TextButton(child: Text('Okay'), onPressed: () {
+                      Navigator.of(ctx).pop();
+                    })
+                  ],
+                ));
+          })
+          .then((_) {
+        setState(() {
+          _isLoading = false;
+        });
+        Navigator.of(context).pop();
+      });
     }
-    Navigator.of(context).pop();
+    // Navigator.of(context).pop();
   }
 
   @override
@@ -109,7 +137,11 @@ class _EditProductsScreenState extends State<EditProductsScreen> {
           ),
         ],
       ),
-      body: Padding(
+      body: _isLoading
+          ? Center(
+        child: CircularProgressIndicator(),
+      )
+          : Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _form,
@@ -145,7 +177,8 @@ class _EditProductsScreenState extends State<EditProductsScreen> {
                 keyboardType: TextInputType.number,
                 focusNode: _priceFocusNode,
                 onFieldSubmitted: (_) {
-                  FocusScope.of(context).requestFocus(_descriptionFocusNode);
+                  FocusScope.of(context)
+                      .requestFocus(_descriptionFocusNode);
                 },
                 validator: (value) {
                   if (value.isEmpty) {
@@ -238,11 +271,11 @@ class _EditProductsScreenState extends State<EditProductsScreen> {
                             !value.startsWith('https')) {
                           return 'Please enter a valid URL.';
                         }
-                        // if (!value.endsWith('.png') &&
-                        //     !value.endsWith('.jpg') &&
-                        //     !value.endsWith('.jpeg')) {
-                        //   return 'Please enter a valid image URL.';
-                        // }
+                        if (!value.endsWith('.png') &&
+                            !value.endsWith('.jpg') &&
+                            !value.endsWith('.jpeg')) {
+                          return 'Please enter a valid image URL.';
+                        }
                         return null;
                       },
                       onSaved: (value) {
